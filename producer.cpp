@@ -49,7 +49,7 @@ int main(int argc, char** argv)
     }
     
 
-    for (int i = 0; i < 30; i++)
+    while (1)
     {
         price = distribution(generator);
 

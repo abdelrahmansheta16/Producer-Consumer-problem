@@ -9,6 +9,7 @@
 #include <stack>
 #include <string.h>
 #include <sys/sem.h>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -21,6 +22,27 @@ struct shmq
 };
 
 
+int getIndex(vector<string> v, string K)
+{
+	auto it = find(v.begin(), v.end(), K);
+
+	// If element was found
+	if (it != v.end())
+	{
+	
+		// calculating the index
+		// of K
+		int index = it - v.begin();
+		return index;
+	}
+	else {
+		// If the element is not
+		// present in the vector
+		return -1;
+	}
+}
+
+
 int main(int argc, char** argv)
 {
     if (argc != 2)
@@ -28,6 +50,10 @@ int main(int argc, char** argv)
         return -1;
     }
     int buffer = stoi(argv[1]);
+
+    vector<string> names;
+    vector<vector<int>> preprices;
+
     key_t key = ftok("lab5",6835);
     key_t semkey = ftok("lab5sem",68355);
     int shmid = shmget(key,sizeof(shmq),0666|IPC_CREAT);
@@ -54,8 +80,53 @@ int main(int argc, char** argv)
 
     for (int i = 0; i < 5; i++)
     {
-        cout << "HI!" << "\n";
-        this_thread::sleep_for(std::chrono::milliseconds(10000));
+        sem[0].sem_op = -1;
+        sem[0].sem_flg = SEM_UNDO;
+        sem[1].sem_op = -1;
+        sem[1].sem_flg = SEM_UNDO;
+        semop(semid,&sem[1],1);
+        semop(semid,&sem[0],1);
+
+        char * sh = (char *) shmat(shmid, (void*)0, 0);
+        memcpy(&q, sh, sizeof(q));
+        
+        int temp = getIndex(names,q.name[0]);
+        if (temp == -1)
+        {
+            names.push_back(q.name[0]);
+            int temp2 = getIndex(names,q.name[0]);
+            vector<int> temp3;
+            preprices.push_back(temp3);
+            preprices[temp2].push_back(q.price[0]);
+        }
+        else
+        {
+            preprices[temp].push_back(q.price[0]);
+            if (preprices[temp].size() > 5)
+            {
+                preprices[temp].erase(preprices[temp].begin());
+            }
+            
+        }
+        
+
+        for (int j = 0; j < q.current; j++)
+        {
+            strcpy(q.name[j],q.name[j+1]);
+            q.price[j] = q.price[j+1];
+        }
+        q.current--;
+        
+        memcpy(sh, &q, sizeof(q));
+        shmdt(sh);
+
+        sem[0].sem_op = 1;
+        sem[2].sem_op = 1;
+        semop(semid,&sem[0],1);
+        semop(semid,&sem[2],1);
+        
+        
+
     }
     shmctl(shmid,IPC_RMID,NULL);
     return 0;
