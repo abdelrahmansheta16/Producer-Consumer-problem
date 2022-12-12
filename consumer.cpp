@@ -109,6 +109,7 @@ int main(int argc, char** argv)
             
         }
         
+        //Print here
 
         for (int j = 0; j < q.current; j++)
         {
