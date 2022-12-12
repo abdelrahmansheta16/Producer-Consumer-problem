@@ -102,7 +102,7 @@ int main(int argc, char** argv)
         else
         {
             preprices[temp].push_back(q.price[0]);
-            if (preprices[temp].size() > 5)
+            if (preprices[temp].size() > 6)
             {
                 preprices[temp].erase(preprices[temp].begin());
             }
