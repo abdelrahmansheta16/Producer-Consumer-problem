@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stack>
 #include <string.h>
+#include <sys/sem.h>
 
 using namespace std;
 
@@ -18,7 +19,6 @@ struct shmq
     char name[100][15];
     double price[100];
 };
-
 
 int main(int argc, char** argv)
 {
@@ -34,19 +34,32 @@ int main(int argc, char** argv)
     double price;
     default_random_engine generator;
     normal_distribution<double> distribution(mean,sd);
-    shmq q;
     key_t key = ftok("lab5",6835);
-    int shmid = shmget(key,sizeof(shmq),0666);
-    if (shmid == -1) 
+    key_t semkey = ftok("lab5sem",68355);
+    int shmid = shmget(key,sizeof(shmq),0666|IPC_CREAT);
+    int semid = semget(semkey, 3, 0666|IPC_CREAT);
+    
+    shmq q;
+    sembuf sem[3];
+    for (int i = 0; i < 3; i++)
     {
-        perror("Shared memory");
-        return 1;
+        sem[i].sem_num = i;
+        sem[i].sem_flg = 0;
+        sem[i].sem_op = 0;
     }
     
 
     for (int i = 0; i < 30; i++)
     {
         price = distribution(generator);
+
+        sem[0].sem_op = -1;
+        sem[0].sem_flg = SEM_UNDO;
+        sem[2].sem_op = -1;
+        sem[2].sem_flg = SEM_UNDO;
+
+        semop(semid,&sem[2],1);
+        semop(semid,&sem[0],1);
         
         char * sh = (char *) shmat(shmid, (void*)0, 0);
         memcpy(&q, sh, sizeof(q));
@@ -54,21 +67,17 @@ int main(int argc, char** argv)
         q.price[q.current] = price;
 
         q.current++;
-        if (q.current > buffer)
-        {
-            for (int i = 0; i < buffer; i++)
-            {
-                q.price[i] = q.price[i+1];
-                strcpy(q.name[i],q.name[i+1]);
-            }
-            q.current--;
-        }
         
-
         cout << q.name[q.current-1] << " ";
         cout << q.price[q.current-1] << " " << q.current << "\n";
         memcpy(sh, &q, sizeof(q));
         shmdt(sh);
+
+        sem[0].sem_op = 1;
+        sem[1].sem_op = 1;
+        semop(semid,&sem[0],1);
+        semop(semid,&sem[1],1);
+
         this_thread::sleep_for(std::chrono::milliseconds(sleep));
     }
 
