@@ -21,29 +21,93 @@ struct shmq
     double price[100];
 };
 
+string getCommName(int comm)
+{
+    switch (comm)
+    {
+    case 0:
+        return "GOLD";
+        break;
+    case 1:
+        return "SILVER";
+        break;
+    case 2:
+        return "CRUDEOIL";
+        break;
+    case 3:
+        return "NATURALGAS";
+        break;
+    case 4:
+        return "ALUMINIUM";
+        break;
+    case 5:
+        return "COPPER";
+        break;
+    case 6:
+        return "NICKEL";
+        break;
+    case 7:
+        return "LEAD";
+        break;
+    case 8:
+        return "ZINC";
+        break;
+    case 9:
+        return "MENTHAOIL";
+        break;
+    case 10:
+        return "COTTON";
+        break;
+    default:
+        return "ALUMINIUM";
+    }
+    return "ALUMINIUM";
+}
+
 void printUpdates(vector<string> names, vector<vector<double>> preprices)
 {
-
-    // printf("currentPrice: %lf\n", currentPrice[3]);
-    // printf("prevPrice: %lf\n", prevPrice[3]);
-    // printf("currentAvg: %lf\n", currentAvg[3]);
-    // printf("prevAvg: %lf\n", prevAvg[3]);
+    vector<string> comm;
+    for (int i = 0; i < 11; i++)
+    {
+        comm.push_back(getCommName(i));
+    }
+    
+    printf("\e[1;1H\e[2J");
     printf("+-------------------------------------+\n");
     printf("| Currency\t|  Price   | AvgPrice |\n");
     printf("+-------------------------------------+\n");
     for (int i = 0; i < 11; i++)
     {
+
+        int k = getIndex(names, comm[i]);
+
         double sum = 0.0;
         double prevSum = 0.0;
         double currentAvg = 0.0;
         double prevAvg = 0.0;
-        for (int x = 5; x > 0; x--)
+        for (int x = preprices[i].size() - 1; x >= 0; x--)
         {
-            sum = sum + preprices[i][x];
-            prevSum = prevSum + preprices[i][x-1];
+            if ((x > 0) or (preprices[i].size() < 6))
+            {
+                sum = sum + preprices[i][x];
+            }
+            if ((x - 1) > -1)
+            {
+                prevSum = prevSum + preprices[i][x - 1];
+            }
         }
-        currentAvg = (sum / 5.0);
-        prevAvg = (prevSum / 5.0);
+        if (preprices[i].size() > 1)
+        {
+            if (preprices[i].size() < 6)
+            {
+                currentAvg = (sum / preprices[i].size());
+            }
+            else
+            {
+                currentAvg = (sum / (preprices[i].size() - 1));
+            }
+            prevAvg = (prevSum / (preprices[i].size() - 1));
+        }
         printf("| ");
         // char currentComm[] = getCommName(i + 1);
         if (names[i].length() > 5)
@@ -60,32 +124,34 @@ void printUpdates(vector<string> names, vector<vector<double>> preprices)
         // {
         //     printf(" ");
         // }
-        if (preprices[i][5] == 0)
+        if (preprices[i].size() > 1)
         {
-
-            printf("\033[0;34m");
-            printf("%7.2lf  ", preprices[i][5]);
-            printf("\033[0m");
-            printf("| ");
-        }
-        else if (preprices[i][5] > preprices[i][4])
-        {
-            printf("\033[0;32m");
-            printf("%7.2lf↑ ", preprices[i][5]);
-            printf("\033[0m");
-            printf("| ");
-        }
-        else if (preprices[i][5] < preprices[i][4])
-        {
-            printf("\033[0;31m");
-            printf("%7.2lf↓ ", preprices[i][5]);
-            printf("\033[0m");
-            printf("| ");
+            if (preprices[i][preprices[i].size() - 1] > preprices[i][preprices[i].size() - 2])
+            {
+                printf("\033[0;32m");
+                printf("%7.2lf↑ ", preprices[i][preprices[i].size() - 1]);
+                printf("\033[0m");
+                printf("| ");
+            }
+            else if (preprices[i][preprices[i].size() - 1] < preprices[i][preprices[i].size() - 2])
+            {
+                printf("\033[0;31m");
+                printf("%7.2lf↓ ", preprices[i][preprices[i].size() - 1]);
+                printf("\033[0m");
+                printf("| ");
+            }
+            else
+            {
+                printf("\033[0;33m");
+                printf("%7.2lf  ", preprices[i][preprices[i].size() - 1]);
+                printf("\033[0m");
+                printf("| ");
+            }
         }
         else
         {
             printf("\033[0;33m");
-            printf("%7.2lf  ", preprices[i][5]);
+            printf("%7.2lf  ", preprices[i][preprices[i].size() - 1]);
             printf("\033[0m");
             printf("| ");
         }
@@ -183,7 +249,7 @@ int main(int argc, char **argv)
     memcpy(sh, &q, sizeof(q));
     shmdt(sh);
 
-    for (int i = 0; i < 5; i++)
+    while (1)
     {
         sem[0].sem_op = -1;
         sem[0].sem_flg = SEM_UNDO;
@@ -214,7 +280,7 @@ int main(int argc, char **argv)
         }
 
         // Print here
-        printUpdates(names,preprices);
+        printUpdates(names, preprices);
         for (int j = 0; j < q.current; j++)
         {
             strcpy(q.name[j], q.name[j + 1]);
