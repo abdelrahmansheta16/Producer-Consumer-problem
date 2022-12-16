@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/sem.h>
 #include <bits/stdc++.h>
+#include <time.h>
 
 using namespace std;
 
@@ -20,6 +21,27 @@ struct shmq
     char name[100][15];
     double price[100];
 };
+
+int getIndex(vector<string> v, string K)
+{
+    auto it = find(v.begin(), v.end(), K);
+
+    // If element was found
+    if (it != v.end())
+    {
+
+        // calculating the index
+        // of K
+        int index = it - v.begin();
+        return index;
+    }
+    else
+    {
+        // If the element is not
+        // present in the vector
+        return -1;
+    }
+}
 
 string getCommName(int comm)
 {
@@ -71,8 +93,8 @@ void printUpdates(vector<string> names, vector<vector<double>> preprices)
     {
         comm.push_back(getCommName(i));
     }
+
     
-    printf("\e[1;1H\e[2J");
     printf("+-------------------------------------+\n");
     printf("| Currency\t|  Price   | AvgPrice |\n");
     printf("+-------------------------------------+\n");
@@ -85,73 +107,86 @@ void printUpdates(vector<string> names, vector<vector<double>> preprices)
         double prevSum = 0.0;
         double currentAvg = 0.0;
         double prevAvg = 0.0;
-        for (int x = preprices[i].size() - 1; x >= 0; x--)
+        if (k > -1)
         {
-            if ((x > 0) or (preprices[i].size() < 6))
+            for (int x = preprices[k].size() - 1; x >= 0; x--)
             {
-                sum = sum + preprices[i][x];
+                if ((x > 0) or (preprices[k].size() < 6))
+                {
+                    sum = sum + preprices[k][x];
+                }
+                if ((x - 1) > -1)
+                {
+                    prevSum = prevSum + preprices[k][x - 1];
+                }
             }
-            if ((x - 1) > -1)
+            if (preprices[k].size() > 1)
             {
-                prevSum = prevSum + preprices[i][x - 1];
+                if (preprices[k].size() < 6)
+                {
+                    currentAvg = (sum / preprices[k].size());
+                }
+                else
+                {
+                    currentAvg = (sum / (preprices[k].size() - 1));
+                }
+                prevAvg = (prevSum / (preprices[k].size() - 1));
             }
-        }
-        if (preprices[i].size() > 1)
-        {
-            if (preprices[i].size() < 6)
-            {
-                currentAvg = (sum / preprices[i].size());
-            }
-            else
-            {
-                currentAvg = (sum / (preprices[i].size() - 1));
-            }
-            prevAvg = (prevSum / (preprices[i].size() - 1));
         }
         printf("| ");
         // char currentComm[] = getCommName(i + 1);
-        if (names[i].length() > 5)
+        if (comm[i].length() > 5)
         {
-            cout << names[i] << "\t"
+            cout << comm[i] << "\t"
                  << "|";
         }
         else
         {
-            cout << names[i] << "\t\t"
+            cout << comm[i] << "\t\t"
                  << "|";
         }
         // for (int x = 0; x < 3; x++)
         // {
         //     printf(" ");
         // }
-        if (preprices[i].size() > 1)
+        if (k > -1)
         {
-            if (preprices[i][preprices[i].size() - 1] > preprices[i][preprices[i].size() - 2])
+            if (preprices[k].size() > 1)
             {
-                printf("\033[0;32m");
-                printf("%7.2lf↑ ", preprices[i][preprices[i].size() - 1]);
-                printf("\033[0m");
-                printf("| ");
-            }
-            else if (preprices[i][preprices[i].size() - 1] < preprices[i][preprices[i].size() - 2])
-            {
-                printf("\033[0;31m");
-                printf("%7.2lf↓ ", preprices[i][preprices[i].size() - 1]);
-                printf("\033[0m");
-                printf("| ");
+                if (preprices[k][preprices[k].size() - 1] > preprices[k][preprices[k].size() - 2])
+                {
+                    printf("\033[0;32m");
+                    printf("%7.2lf↑ ", preprices[k][preprices[k].size() - 1]);
+                    printf("\033[0m");
+                    printf("| ");
+                }
+                else if (preprices[k][preprices[k].size() - 1] < preprices[k][preprices[k].size() - 2])
+                {
+                    printf("\033[0;31m");
+                    printf("%7.2lf↓ ", preprices[k][preprices[k].size() - 1]);
+                    printf("\033[0m");
+                    printf("| ");
+                }
+                else
+                {
+                    printf("\033[0;33m");
+                    printf("%7.2lf  ", preprices[k][preprices[k].size() - 1]);
+                    printf("\033[0m");
+                    printf("| ");
+                }
             }
             else
             {
                 printf("\033[0;33m");
-                printf("%7.2lf  ", preprices[i][preprices[i].size() - 1]);
+                printf("%7.2lf  ", preprices[k][preprices[k].size() - 1]);
                 printf("\033[0m");
                 printf("| ");
             }
         }
         else
         {
-            printf("\033[0;33m");
-            printf("%7.2lf  ", preprices[i][preprices[i].size() - 1]);
+            printf("\033[0;32m");
+            printf("   0.00  ");
             printf("\033[0m");
             printf("| ");
         }
@@ -191,27 +226,6 @@ void printUpdates(vector<string> names, vector<vector<double>> preprices)
         printf("\n");
     }
     printf("+-------------------------------------+\n");
-}
-
-int getIndex(vector<string> v, string K)
-{
-    auto it = find(v.begin(), v.end(), K);
-
-    // If element was found
-    if (it != v.end())
-    {
-
-        // calculating the index
-        // of K
-        int index = it - v.begin();
-        return index;
-    }
-    else
-    {
-        // If the element is not
-        // present in the vector
-        return -1;
-    }
 }
 
 int main(int argc, char **argv)
@@ -280,6 +294,7 @@ int main(int argc, char **argv)
         }
 
         // Print here
+        printf("\e[1;1H\e[2J");
         printUpdates(names, preprices);
         for (int j = 0; j < q.current; j++)
         {

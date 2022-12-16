@@ -9,6 +9,7 @@
 #include <stack>
 #include <string.h>
 #include <sys/sem.h>
+#include <time.h>
 
 using namespace std;
 
@@ -47,6 +48,8 @@ int main(int argc, char** argv)
         sem[i].sem_flg = 0;
         sem[i].sem_op = 0;
     }
+
+    timespec time;
     
 
     while (1)
